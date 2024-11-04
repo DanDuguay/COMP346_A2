@@ -28,7 +28,8 @@ public class Server extends Thread {
 	private String serverThreadId;				 /* Identification of the two server threads - Thread1, Thread2 */
 	private static String serverThreadRunningStatus1;	 /* Running status of thread 1 - idle, running, terminated */
 	private static String serverThreadRunningStatus2;	 /* Running status of thread 2 - idle, running, terminated */
-  
+    private static String serverThreadRunningStatus3;
+
     /** 
      * Constructor method of Client class
      * 
@@ -58,7 +59,8 @@ public class Server extends Thread {
     	else
     	{
     		serverThreadId = stid;							/* unshared variable so each thread has its own copy */
-    		serverThreadRunningStatus2 = "idle";				
+    		serverThreadRunningStatus2 = "idle";
+            serverThreadRunningStatus3 = "idle";
     	}
     }
   
@@ -193,6 +195,10 @@ public class Server extends Thread {
          { 
        	  serverThreadRunningStatus2 = runningStatus;
          }
+
+         public String getServerThreadRunningStatus3() {return serverThreadRunningStatus3;}
+
+         public void setServerThreadRunningStatus3(String runningStatus) {serverThreadRunningStatus3 = runningStatus;}
          
     /** 
      * Initialization of the accounts from an input file
@@ -273,8 +279,10 @@ public class Server extends Thread {
          /* Process the accounts until the client disconnects */
          while ((!Network.getClientConnectionStatus().equals("disconnected")))
          {
-             //while (Network.getInBufferStatus().equals("empty") && Network.getClientConnectionStatus().equals("connected"))
-             //    Thread.yield();
+             while ((Network.getInBufferStatus().equals("empty") && !Network.getClientConnectionStatus().equals("disconnected"))) {
+                 Thread.yield();
+             }
+
 
         	 if (!Network.getInBufferStatus().equals("empty"))
         	 { 
@@ -313,8 +321,9 @@ public class Server extends Thread {
                             /* System.out.println("\n DEBUG : Server.processTransactions() - Obtaining balance from account" + trans.getAccountNumber()); */
 					}
 
-                 //while (Network.getOutBufferStatus().equals("full"))
-                 //    Thread.yield();
+                 while (Network.getOutBufferStatus().equals("full"))
+                     Thread.yield();
+
         
         		
         		 /* System.out.println("\n DEBUG : Server.processTransactions() - transferring out account " + trans.getAccountNumber()); */
@@ -421,13 +430,33 @@ public class Server extends Thread {
     public void run()
     {
         long serverStartTime, serverEndTime;
+        Transactions trans = new Transactions();
+        serverStartTime = System.currentTimeMillis();
+        processTransactions(trans);
 
+        if (getServerThreadId().equals("server1")){
+            serverEndTime = System.currentTimeMillis();
+            System.out.println("\n Terminating server thread1 - " + " Running time " +
+                    (serverEndTime - serverStartTime) + " milliseconds");
+            setServerThreadRunningStatus1("terminated");
+        } else if (getServerThreadId().equals("server2")){
+            serverEndTime = System.currentTimeMillis();
+            System.out.println("\n Terminating server thread2 - " + " Running time " +
+                    (serverEndTime - serverStartTime) + " milliseconds");
+            setServerThreadRunningStatus2("terminated");
+        } else if (getServerThreadId().equals("server3")){
+            serverEndTime = System.currentTimeMillis();
+            System.out.println("\n Terminating server thread3 - " + " Running time " +
+                    (serverEndTime - serverStartTime) + " milliseconds");
+            setServerThreadRunningStatus3("terminated");
+        }
+    /*
         if (Objects.equals(getServerThreadId(), "server1"))
         {
             setServerThreadRunningStatus1("running");
 
             serverStartTime = System.currentTimeMillis();
-            Transactions trans = new Transactions();
+            //Transactions trans = new Transactions();
             processTransactions(trans);
             serverEndTime = System.currentTimeMillis();
             System.out.println("\n Terminating server thread1 - " + " Running time " +
@@ -441,7 +470,7 @@ public class Server extends Thread {
             setServerThreadRunningStatus2("running");
 
             serverStartTime = System.currentTimeMillis();
-            Transactions trans = new Transactions();
+            //Transactions trans = new Transactions();
             processTransactions(trans);
             serverEndTime = System.currentTimeMillis();
             System.out.println("\n Terminating server thread2 - " + " Running time " +
@@ -450,8 +479,25 @@ public class Server extends Thread {
             setServerThreadRunningStatus2("terminated");
         }
 
+        if (Objects.equals(getServerThreadId(), "server3"))
+        {
+            setServerThreadRunningStatus2("running");
+
+            serverStartTime = System.currentTimeMillis();
+           // Transactions trans = new Transactions();
+            processTransactions(trans);
+            serverEndTime = System.currentTimeMillis();
+            System.out.println("\n Terminating server thread3 - " + " Running time " +
+                    (serverEndTime - serverStartTime) + " milliseconds");
+
+            setServerThreadRunningStatus3("terminated");
+        }
+
+     */
+
         //System.out.println("\n DEBUG : Server.run() - starting server thread " + objNetwork.getServerConnectionStatus());
-        if (getServerThreadRunningStatus1().equals("terminated") && getServerThreadRunningStatus2().equals("terminated"))
+        if (getServerThreadRunningStatus1().equals("terminated") && getServerThreadRunningStatus2().equals("terminated")
+        && getServerThreadRunningStatus3().equals("terminated"))
             Network.disconnect(Network.getServerIP());
 
         /* Implement the code for the run method */
